@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>G-Serial</title>
+<style>
+body {/* main container, two columns */
+  font-family: sans-serif;
+  font-weight: normal;
+  margin: 0px;
+  height:100vh;
+  box-sizing: border-box;
+  margin:0;  
+}
+table, td, th {
+    font-weight: normal;      /* <-- detta tvingar normal vikt */
+}
+table{border-collapse: separate;border-spacing: 5px;
+}
+tr{background:#f0f0f0;}
+button {
+  padding: 5px 10px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: white;
+  color: black;
+}
+button.selected {
+  background: darkgreen;
+  color: white;
+}
+
+
+.controlButton{
+width:80px;
+margin:5px;
+}
+
+input{
+	text-align: right;
+  padding: 2px 4px;
+  font-family: monospace;
+  font-size:1.5em
+}
+#status{/* som input fast utan text align*/
+  padding: 2px 4px;
+  font-family: monospace;
+  font-size:1.5em
+}
+
+#workoffset th {
+  border: 1px solid black;
+  border-radius: 4px;
+  font-size:0.9em;
+  background:#FFFFCC;
+  cursor: default;
+}
+
+#workoffset th.selected {
+  color: white;
+  background: darkgreen;
+}
+
+.disabled-panel {
+  pointer-events: none;
+  opacity: 0.5;          /* valfritt, visuell feedback */
+}
+
+
+</style>
+<!--
+#FFFFCC ljusgul
+#f0f0f0 ljus grå
+-->
+<body>
+<table style="border:0;width:100%;height:100%;padding:0;margin:0;border-collapse: colapse;border-spacing: 0">
+<tr>
+<!--left panel-->
+    <td style="border:0;padding:0;background-color:blue;width:300px">
+<!--left panel with 5 rows,-->
+<table style="box-sizing: border-box;border:0;width:100%;height:100%;background-color:white;">
+  <tr><th>
+<!--left panel with 5 rows,row 1--> 
+<table style="box-sizing: border-box;border:1px solid black;width:100%;">
+  <tr><th style="width:100px">Connect:</th>
+    <th>
+      <button id="connect" >On</button>
+      <button id="disconnect" class="selected">Off</button>
+    </th>
+  </tr><tr>
+    <th style="width:100px">Status:</th>
+    <th id="status" style="border:1px solid black;background:#FFFFCC">---</th>
+  </tr>
+</table>
+<!-- row 1 end -->
+</th></tr><tr><th id="panel_spindle" class="disabled-panel">
+<!--left panel with 5 rows,row 2-- spindle & table feed speed --> 
+<table style="box-sizing: border-box;border:1px solid black;width:100%;">
+  <tr>
+    <th style="width:100px">Spindle:</th>
+    <th>
+      <button id="spindle_on" >On</button>
+      <button id="spindle-off" class="selected">Off</button>
+  </th></tr><tr>
+    <th colspan="2 style="width:100px">
+<!-- feed speed table-->
+<table style="box-sizing: border-box;width:100%;">
+  <tr>
+    <th>Feed:</th>
+    <th><input type="text" id="feed" size="5" style="width: 5ch;" value="---"></th>
+    <th>Speed:</th>
+    <th><input type="text" id="speed"  style="width: 5ch;" value="---"></th>
+  </tr>
+</table>
+<!--feed speed END-->
+</th></tr></table>
+<!-- row 2 end -->  
+</th></tr><tr><th id="panel_mode" class="disabled-panel">
+<!--left panel with 5 rows,row 3--> 
+<table style="box-sizing: border-box;border:1px solid black;width:100%;">
+  <tr>
+    <th style="width:100px">Mode:</th>
+    <th>
+      <button id="G90" >G90</button>
+      <button id="G91" class="selected">G91</button>
+    </th>
+  </tr>
+</table>
+<!-- row 3 end -->  
+</th></tr><tr><th id="panel_offset" class="disabled-panel">
+<!--left panel with 5 rows,row 4-->     
+<table style="box-sizing: border-box;width:100%;border:1px solid black;">
+  <tr><th colspan="7">Work Offset</th></tr>
+  <tr id="workoffset" style="margin:5px;">
+    <th  class="selected" id="Zero0">53</th><th id="Zero1">54</th><th id="Zero2">55</th><th id="Zero3">56</th><th id="Zero4">57</th><th id="Zero5">58</th><th id="Zero6">59</th>
+  </tr>
+</table>
+<!-- row 3 end -->    
+</th></tr><tr><th id="panel_pos" class="disabled-panel">
+<!--left panel with 5 rows,row 5--> 
+<table style="box-sizing: border-box;width:100%;border:1px solid black;">
+  <tr>
+    <th>X:</th><th><input type="text" id="x-pos" size="7" style="width: 5ch;" value="---"></th>
+    <th rowspan="3"><button >GO TO</button></th>
+  </tr><tr>
+    <th>Y:</th><th><input type="text" id="y-pos" size="7" style="width: 5ch;" value="---"></th>
+  </tr><tr>
+    <th>Z:</th><th><input type="text" id="z-pos" size="7" style="width: 5ch;" value="---"></th>
+  </tr>
+</table>
+<!-- row 5 end --> 
+</th></tr><tr>
+    <th style="height:100%;background:silver"></th>
+</tr>
+</table><!--END left panel with 5 rows -->
+</td>
+<!--right panel-->
+<td style="border:0;padding:0;background:#e0e0ff;width:100%" >
+<!-- table controll buttons & g code-->
+<table style="box-sizing: border-box;border:0;width:100%;height:100%"><tr><th style="background:#e0e0ff" id="panel_controlCommands" class="disabled-panel">
+<button class="controlButton" id="run">Run</button>
+<button class="controlButton" id="pause">Pause</button>
+<button class="controlButton" id="resume">Resume</button>
+<button class="controlButton" id="stop">Stop</button>
+<button class="controlButton" id="unlock">Unlock</button>
+</th></tr><tr><th id="error" style="display:none;text-align:left;padding:5px;"></th></tr><tr><th style="height:100%">
+<textarea id="editor" wrap="off" placeholder="Skriv eller klistra in G-kod här..." style="width:100%;height:100%;box-sizing: border-box;"></textarea>
+</th></tr></table>
+<!--right panel END-->
+</td></tr></table>
+<!-- left & right table END -->
+</body>
+<script>
+//==============================================================================
+// creates error codes
+//==============================================================================
+const rawText = `
+1	Expected G-code word	Grbl expected a valid command (like G1, M3, etc.) but didn't find one. This is often due to a blank or malformed line.
+2	Bad number format	A number in the command was invalid or improperly formatted.
+3	Invalid statement	The line contains an unknown or unsupported command.
+4	Negative value	A negative value was used where it isn't allowed, such as a feed rate or spindle speed.
+5	Homing not enabled	A homing cycle ($H) was requested but homing is not enabled in the settings.
+6	Minimum step pulse time violated	A step pulse was issued faster than the configured minimum time ($0).
+7	EEPROM read fail	Grbl could not read its settings from EEPROM. May indicate hardware issues.
+8	Not idle	A command was issued that requires the machine to be idle, but motion or another operation is in progress.
+9	G-code lockout	A G-code command was blocked due to machine state. Common after a reset or alarm.
+10	 Homing not set	The machine requires homing to establish its position before executing the command.
+11	 Line overflow	A G-code line was too long for Grbl’s internal buffer. Shorten your lines.
+12 	Step rate too high	Grbl could not generate step pulses fast enough for the commanded movement.
+13	 Safety door open	A command was blocked because the safety door is open.
+14	 Build info overflow	The build info string exceeded the allowed character limit.
+15	 Setting disabled	A command depends on a setting (like homing or soft limits) that is disabled.
+16 	Negative value in settings	A setting value was set to a negative number, which is invalid.
+17 Invalid jog command	A jog command is improperly formatted or unsupported.
+20 Unsupported command	The command is not supported by Grbl’s G-code parser.
+21	 Modal group violation	Two conflicting commands from the same modal group (e.g. two motion modes) were used together.
+22	 Undefined feed rate	A motion command was issued without a feed rate being set.
+23	 Axis command conflict	Two axis words used inappropriately together, such as in arcs or jogs.
+24	 Invalid target	The target position is invalid — for example, in an arc that can’t be generated.
+25	 Invalid arc radius	Arc command contains a radius value that doesn't make geometric sense.
+26	 Invalid G-code word	A word was used in the wrong context or is not allowed for the active command.
+27 Invalid line number	A line number was used incorrectly or exceeds limits.
+28 Value word repeated	A G-code word was used more than once on the same line.
+29	 G59.x WCS error	A G59.1, G59.2, or G59.3 work coordinate system was used but isn’t supported.
+30	 G53 with offset	G53 motion cannot be used with G54–G59 offsets.
+31	 Invalid real value	A floating-point value is invalid (e.g. NaN, too many decimal places, etc.).
+32	 Arc axis missing	An arc command is missing a required axis word.
+33	 Arc format error	Arc command has incorrect or conflicting data (e.g., missing radius and offset).
+34 	No axis word in motion	A motion command was issued without specifying any axis to move.
+35	 G2/G3 not allowed	Arc motions (G2/G3) are not allowed in certain states, like jogging.
+36 Unused words	Extra G-code words were found that don’t apply to the current command.
+`;
+const ErrorCodes = [];
+
+rawText.trim().split("\n").forEach(line => {
+  const [code, ...messageParts] = line.trim().split(" ");
+  ErrorCodes[Number(code)] = messageParts.join(" ");
+});
+//==============================================================================
+//==============================================================================
+// Spindle radioknappar
+const spindleButtons = document.querySelectorAll('#spindle-group button');
+  spindleButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    spindleButtons.forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+
+// Modal radioknappar
+const modalButtons = document.querySelectorAll('.modal-btn');
+modalButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const parent = btn.parentElement;
+    parent.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+
+// Program grid demo
+function $id(id) {return document.getElementById(id);}
+function $style(id) {return document.getElementById(id).style;}
+/*const editor = document.getElementById('editor');
+const grid = document.getElementById('grid');
+const runBtn = document.getElementById('run-btn');
+const stopBtn = document.getElementById('stop-btn');
+*/
+let gridData = [];
+gridData[0] = [0,0,0];
+let onIdle = false;
+let zeroPoints=[];
+
+//===========================================================
+//===========================================================
+async function connect() {
+  const filters = [
+  { usbVendorId: 0x2341 },  // Arduino officiell (ATMega + Leonardo)
+  { usbVendorId: 0x2A03 },  // Arduino clone / fake
+  { usbVendorId: 0x1A86 },  // CH340 / CH341
+  { usbVendorId: 0x10C4 },  // CP210x (Silicon Labs)
+  { usbVendorId: 0x0403 },  // FTDI
+  { usbVendorId: 0x067B },  // Prolific PL2303
+  { usbVendorId: 0x2E8A },  // Prolific PL2303
+  { usbVendorId: 0x10C4 },  // – CP210x (Silicon Labs, vanlig på ESP32 + GRBL)
+  { usbVendorId: 0x303A },  //– Espressif (ESP32-S2/S3 native USB, GRBL-ESP32)
+  { usbVendorId: 0x2888 }   //– Teensy (PJRC, GRBL-portar finns)
+];
+
+
+  try {
+    port = await navigator.serial.requestPort({ filters });
+    await port.open({ baudRate: 38400 });
+    writer = port.writable.getWriter();
+    reader = port.readable.getReader();
+    isConnected=true;
+    console.log("1");
+    startReader();//sätter i gång och lyssnar på ingången
+    pollStatus();//sätter i gång och skickar status fråga på utgång, börjar fråga vad GRBL gör
+    onIdle = true;
+    idle();
+    selectButton("connect");
+    //uppdaterar ui
+    
+    enablePanel("panel_spindle");
+    enablePanel("panel_mode");
+    enablePanel("panel_offset");
+    enablePanel("panel_pos");
+    enablePanel("panel_controlCommands");
+  } catch (err) {
+    console.log("Ingen port vald eller fel vid anslutning:", err);
+    port = null;
+    writer = null;
+    reader = null;
+    selectButton("disconnect");
+    
+     if (err.name === "NotFoundError") {
+        alert("Porten finns inte eller valdes inte.");
+    } else if (err.name === "NetworkError") {
+        alert("Porten är upptagen eller kan inte öppnas.");
+    } else {
+        alert("Annat fel vid uppkoppling:", err);
+    }
+  }
+}
+//===========================================================
+async function disconnect() {
+  onIdle = false;
+  try {
+    if (reader) {
+      await reader.cancel();
+      reader.releaseLock();
+      reader = null;
+    }
+
+    if (writer) {
+      await writer.close(); 
+      writer.releaseLock();
+      writer = null;
+    }
+
+    if (port) {
+      await port.close();
+      port = null;
+    }
+
+    console.log("Disconnected");
+    selectButton("disconnect");
+    $style("status").backgroundColor="#FFFFCC";$style("status").color="black";
+    $id("status").innerText="---";
+  } catch (error) {
+    console.error("Error during disconnect:", error);
+  }
+}
+
+let isConnected=false;
+ 
+async function run(){
+  $id("error").style.display = "none";
+  $id("error").innerHTML="";//tömmer eventuella errors
+  if($id("status").innerText!="Idle"){
+    alert("Upptagen, kan inte starta");
+    return;
+  }
+  $id("editor").readOnly = true;
+
+  console.log("1");
+
+  console.log("2");
+  await sendCmd("$C");//gör test först
+  await runGcode();
+  await sendCmd("$C");//avslutar test
+  await new Promise(resolve => {idleSentinel.waiting(resolve);});
+  //om inga fel
+  
+  if($id("error").innerHTML==""){
+    console.log("No parser error");
+    runGcode();
+    console.log("har kört alla rader----------------");
+    await new Promise(resolve => {idleSentinel.waiting(resolve);});//väntar på att signalen för idle kommer
+    console.log("promise är klart----------------");
+    
+  }
+  console.log("4");
+
+  console.log("5");
+
+  $id("editor").readOnly = false;
+}
+
+function pause(){
+  writer.write(new TextEncoder().encode("!"));
+  disablePanel("run");
+}
+function resume(){
+  writer.write(new TextEncoder().encode("~"));
+  disablePanel("resume");
+}
+function stop(){
+  writer.write(new Uint8Array([0x18]));
+}
+function unlock(){
+  writer.write(new TextEncoder().encode("$X\n"));
+}
+
+
+
+async function idle(){
+  while(onIdle){
+    let answer = lineFromBuffer();//skall läsa tills det är tomt
+   
+    if(answer==null){
+      await sleep(200);
+    }else{
+      updateUI(answer);
+    }
+  }
+  alert("Stänger av idle");
+}
+
+let answerCounter=0;
+
+async function runGcode() {
+
+   let code = $id("editor").value;
+  // OBS! Det ska vara \n, inte /n
+  code = code.split("\n");
+  answerCounter=0;// så att inga tidigare komandon har blivit osynkade
+  let rad=0;
+  for (const line of code) {
+  //markera rader
+  rad++;
+  markLinesUpTo(rad);
+
+    if (!line.trim()) continue; // hoppa över tomma rader
+ console.log(rad+ " : "+line);
+    await sendCmd(line);
+    //om jag går ofline, stoppa här
+    answerCounter++;
+    while(answerCounter>0){
+      if($id("error").innerHTML!=""){
+        //ett fel har skett, avbryt
+        return;
+      }
+      await sleep(200);// väntar på att få skicka nästa rad
+    }
+     
+  }
+  //nu har alla kodrader skickats in vänta tills det blir idle
+
+}
+
+
+async function pollStatus() {
+    while (isConnected) {
+      await writer.write(new TextEncoder().encode("?"));// skicka statusrequest utan att få ok som svar, eftersom inget radslut.
+      await sleep(500);// poll var 0.2 s
+    }
+}
+
+function updateUI(status){
+  //börjar med att extrahera status idle/run
+
+  if(status[0]=="<"){
+    //det är en status
+    let statusParts=status.split("|");
+    let statusType=statusParts[0].slice(1); //tar bort första tecknet
+    $id("status").innerText=statusType; //tar bort första tecknet
+    if(statusType=="Idle"){
+   console.log("idle---------");
+      idleSentinel.ready();//berättar att det är idle om någon väntar
+      $style("status").backgroundColor="#FFFFCC";$style("status").color="black";
+      enablePanel("run");
+      disablePanel("pause");
+      disablePanel("resume");
+      disablePanel("unlock");
+    }
+    if(statusType=="Run"){
+      $style("status").backgroundColor="DarkBlue";$style("status").color="white";
+      disablePanel("run");
+      enablePanel("pause");
+      disablePanel("resume");
+      enablePanel("stop");
+    }
+    if(statusType=="Hold"){
+      $style("status").backgroundColor="#a5a5df";$style("status").color="black";
+      disablePanel("run");
+      disablePanel("pause");
+      enablePanel("resume");
+      enablePanel("stop");
+      disablePanel("unlock");    
+    }
+    if(statusType=="Alarm"){
+      $style("status").backgroundColor="DarkRed";$style("status").color="white";
+      disablePanel("run");
+      disablePanel("pause");
+      disablePanel("resume");
+      disablePanel("stop");
+      enablePanel("unlock");
+    }
+    if(statusType=="Check"){
+      $style("status").backgroundColor="DarkGreen";$style("status").color="white";
+      disablePanel("run");
+      disablePanel("pause");
+      disablePanel("resume");
+      disablePanel("stop");
+      enablePanel("unlock");
+    }
+/*
+Idle – Maskinen är stilla, inga pågående rörelser.
+Run – Maskinen utför en G-kod-rörelse (t.ex. G1, G0).
+Hold – Maskinen är pausad via real-time stop (!) eller cykelpause (~).
+Jog – Maskinen joggas manuellt (t.ex. via jog-kommandon).
+Alarm – Maskinen har stött på ett allvarligt fel, t.ex. limit switch utlösts eller missad steg-puls.
+Check – Maskinen är i “check mode” (G-kod körs i simulering utan att flytta motorer).
+Home – Maskinen utför homing-sekvens ($H).
+*/
+    let pos=statusParts[1].split(",");
+    $id("x-pos").value=pos[0].split(":")[1]
+    $id("y-pos").value=pos[1]
+    $id("z-pos").value=pos[2]
+    
+    let feedSpeed=statusParts[2].split(":")[1].split(",");
+    $id("feed").value=feedSpeed[0];
+    $id("speed").value=feedSpeed[1].replace(">","");//kommer > i bland
+    
+  }else if(status=="ok"){
+    
+    //om det kommer extra ok från pendanten, så negligera dessa ok, kan inte vara mindre än 0
+    answerCounter=Math.max(answerCounter-1,0);
+  }else{
+    //är det ett fel?
+    if(status.split(":")[0]=="error"){
+    $id("error").style.display = "";
+      $id("error").innerHTML=status+"<br>"+ErrorCodes[status.split(":")[1]];
+    }
+  console.log("annat:"+status);
+  }
+	// uppdaterar x y z...
+}
+
+
+let port;
+let writer;
+let reader;
+
+
+async function sendCmd(cmd) {
+  const data = new TextEncoder().encode(cmd + '\n');
+  await writer.write(data);
+}
+
+
+//===========================================================
+//
+// läser in data, en rad i taget
+//
+//===========================================================
+
+let serialBuffer = '';
+
+
+function lineFromBuffer() {
+  //returnerar första raden,eller null om ingen rad finns
+ 
+  const newlineIndex = serialBuffer.indexOf('\n');
+  if (newlineIndex >= 0) {
+    const line = serialBuffer.slice(0, newlineIndex).trim();
+    serialBuffer = serialBuffer.slice(newlineIndex + 1);
+    return line;
+  }
+  return null;
+}
+
+
+async function startReader() {
+    // Läser in allt och lägger i bufferten
+    //lägger bara in i bufferten när en rad är färdig
+    //skall se till att GRBL/USB bufferten alltid är tom
+    const decoder = new TextDecoder();
+    let line="";//altid tom i början av loopen eftersom startreader startas när förbindelsen öppnas till usb serial
+    
+    while (isConnected) {
+        const { value, done } = await reader.read();
+        if (done){isConnected=false; break;}//serial usb förbindelsen avbruten (felaktigt)
+        line+=decoder.decode(value);
+        let newlineIndex = line.indexOf('\n');//hittar första char som är nyrad
+        while(newlineIndex >= 0) {
+          serialBuffer +=line.slice(0, newlineIndex).trim()+"\n";//trim för extra \r före \n
+          line = line.slice(newlineIndex + 1);
+          newlineIndex = line.indexOf('\n');//finns det fler rader?
+        }
+    }
+}
+//===========================================================
+
+
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+async function flushBuffer(timeoutMs = 50) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const { value, done } = await Promise.race([
+      reader.read(),
+      new Promise(r => setTimeout(() => r({ value: null, done: true }), 10))
+    ]);
+
+    if (done || !value || value.length === 0) break;
+    // data kastas
+  }
+
+  // Extra säkerhet: lås upp och skapa ny reader
+  try { await reader.cancel(); } catch {}
+  reader.releaseLock?.();
+  reader = port.readable.getReader();
+}
+//========================================================
+
+
+function zeroset(number){//att sätta och aktivera offset är två steg
+  if (zeroPoints[number]) {
+    //finns tidigare nummer, sätt som aktiv
+    sendCmd("G"+(53+number));
+    $id("Zero"+number).style.background="white";
+  }else{
+    //är osatt, sätt den
+    zeroPoints[1] = [$id("x-pos").value,$id("y-pos").value, $id("z-pos").value];
+    sendCmd("G10L20P"+number+"X0Y0Z00");
+    for(let r=0;r<7;r++){
+      if($id("Zero"+number).style.background=="darkgreen"){//vill inte ändra de med gul färg
+        $id("Zero"+number).style.background="white";
+        $id("Zero"+number).style.color="black";
+      }
+    }
+    
+    
+    $id("Zero"+number).style.background="darkgreen";
+    $id("Zero"+number).style.color="white";
+  
+  } 
+}
+
+function selectButton(id, status = true) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+
+  const parent = btn.parentElement;
+
+  if (status) {
+    // Ta bort 'selected' från alla knappar i samma container
+    parent.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  } else {
+    btn.classList.remove('selected');
+  }
+}
+
+
+function markLinesUpTo(row) {
+   
+    const endPos = $id("editor").value.split('\n').slice(0, row).join('\n').length;
+    console.log(endPos+" : "+row);
+   
+    
+    $id("editor").selectionStart = 0;   // Börjar från början
+    $id("editor").selectionEnd = endPos;
+    $id("editor").focus();              // Visar markeringen
+}
+
+function disablePanel(panelId) {
+  $id(panelId).classList.add('disabled-panel');
+}
+
+function enablePanel(panelId) {
+  $id(panelId).classList.remove('disabled-panel');
+}
+//========================================================
+const idleSentinel = {
+// ropar ut när idle hittas, till den som väntar
+	adress: null,
+	waiting(from) {this.adress = from;},
+	ready() {if(this.adress)this.adress();}//skickar bara om det är någon som lyssnar
+ };
+ // för att vänta :  await new Promise(resolve => {idleSentinel.waiting(resolve);});
+ //för att berätta : idleSentinel.ready();
+//========================================================
+$id("connect").addEventListener("click", connect);
+$id("disconnect").addEventListener("click", disconnect);
+
+$id("run").addEventListener('click', run);
+$id("pause").addEventListener('click', pause);
+$id("resume").addEventListener('click', resume);
+$id("stop").addEventListener('click', stop);
+$id("unlock").addEventListener('click', unlock);
+
+$id("Zero0").addEventListener('click', () =>zeroset(0));
+$id("Zero1").addEventListener('click', () =>zeroset(1));
+$id("Zero2").addEventListener('click', () =>zeroset(2));
+$id("Zero3").addEventListener('click', () =>zeroset(3));
+$id("Zero4").addEventListener('click', () =>zeroset(4));
+$id("Zero5").addEventListener('click', () =>zeroset(5));
+$id("Zero6").addEventListener('click', () =>zeroset(6));
+</script>
+</body>
+</html>
